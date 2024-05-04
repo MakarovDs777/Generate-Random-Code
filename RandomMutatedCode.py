@@ -1,5 +1,7 @@
 import random
 import sys
+import ast
+import astor
 
 def merge_code(code1, code2):
     merged_code = ''
@@ -23,16 +25,30 @@ def test_code(exec_code):
         return False
 
 def mutate_code(code):
-    lines = code.strip().split('\n')
-    num_lines = len(lines)
-    mutate_index = random.randint(0, num_lines - 1)
-    mutation = lines[mutate_index]
+    tree = ast.parse(code)
+    elements = [node for node in ast.walk(tree)]
+    element_to_mutate = random.choice(elements)
     
-    # изменение случайной строки путем ее переворачивания
-    mutated_line = mutation[::-1]
-    lines[mutate_index] = mutated_line
+    # Стратегии мутации могут быть более сложными, чем эта, но для простоты я просто отменю литералы или заменю на 0
+    if isinstance(element_to_mutate, ast.Constant):
+        if isinstance(element_to_mutate.value, bool):
+            mutated_value = not element_to_mutate.value
+        elif isinstance(element_to_mutate.value, int):
+            mutated_value = -element_to_mutate.value
+        else:
+            mutated_value = 0
+        element_to_mutate.value = mutated_value
+    elif isinstance(element_to_mutate, ast.BinOp):
+        if isinstance(element_to_mutate.op, ast.Add):
+            element_to_mutate.op = ast.Sub()
+        elif isinstance(element_to_mutate.op, ast.Sub):
+            element_to_mutate.op = ast.Add()
+        elif isinstance(element_to_mutate.op, ast.Mult):
+            element_to_mutate.op = ast.Div()
+        elif isinstance(element_to_mutate.op, ast.Div):
+            element_to_mutate.op = ast.Mult()
     
-    mutated_code = '\n'.join(lines)
+    mutated_code = astor.to_source(tree)
     return mutated_code
 
 code1 = """class Number:
@@ -70,14 +86,14 @@ print(*filter_lst(a,lambda x: x >= 3 and x <= 5))"""
 while True:
     merged_code = merge_code(code1, code2)
     if test_code(merged_code):
-        print("Merged code works:")
+        print("Объединенный код работает:")
         print(merged_code)
         break
     else:
-        print("Merged code failed. Mutating codes...")
+        print("Ошибка в объединенном коде. Изменяющиеся коды...")
         code1 = mutate_code(code1)
         code2 = mutate_code(code2)
-        print("Code 1 after mutation:")
+        print("Код 1 после мутации:")
         print(code1)
-        print("Code 2 after mutation:")
+        print("Код 2 после мутации:")
         print(code2)
