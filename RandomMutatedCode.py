@@ -28,7 +28,7 @@ def mutate_code(code):
     mutate_index = random.randint(0, num_lines - 1)
     mutation = lines[mutate_index]
     
-    # mutating a random line by reversing it
+    # изменение случайной строки путем ее переворачивания
     mutated_line = mutation[::-1]
     lines[mutate_index] = mutated_line
     
